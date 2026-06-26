@@ -154,11 +154,11 @@ BEGIN
   END IF;
 
   IF v_pred_sign = v_real_sign AND v_diff_diff = 1 THEN
-    RETURN 4;
+    RETURN 3;
   END IF;
 
-  IF v_pred_sign != v_real_sign AND v_diff_diff = 1 THEN
-    RETURN 1;
+  IF v_pred_sign = v_real_sign THEN
+    RETURN 2;
   END IF;
 
   RETURN 0;
