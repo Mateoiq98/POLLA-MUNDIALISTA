@@ -1,0 +1,17 @@
+{
+  "name": "Polla Mundialista",
+  "short_name": "Polla",
+  "description": "Pronosticos deportivos - Mundial 2026",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#22d3ee",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
