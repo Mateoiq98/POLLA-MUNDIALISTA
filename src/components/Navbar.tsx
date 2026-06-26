@@ -136,7 +136,7 @@ export default function Navbar() {
         >
           <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
           <span className="text-base sm:text-lg font-bold text-gradient hidden sm:block">
-            Polla Mundialista
+            Polla Mundial ⚽
           </span>
         </button>
 

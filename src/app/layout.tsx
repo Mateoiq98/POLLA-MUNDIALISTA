@@ -21,13 +21,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Polla Mundialista",
+  title: "Polla Mundial",
   description: "Pronosticos deportivos - Mundial 2026",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Polla",
+    title: "Polla Mundial",
   },
 };
 

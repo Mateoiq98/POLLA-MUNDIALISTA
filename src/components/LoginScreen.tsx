@@ -209,7 +209,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
             <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-green-500/20 border border-yellow-500/30 mb-4">
               <Trophy className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-400" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gradient">Polla Mundialista</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gradient">Polla Mundial ⚽</h1>
             <p className="text-muted-foreground mt-2 text-xs sm:text-sm">
               Registra tus pronosticos para el Mundial 2026
             </p>
