@@ -12,7 +12,6 @@ import {
   UserPlus,
   Crown,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { hashPassword, verifyPassword } from "@/lib/auth";
 import { toast } from "sonner";
@@ -83,7 +82,11 @@ export default function GroupSelector({
   }, [supabase, userId, onGroupSelected]);
 
   useEffect(() => {
-    loadGroups();
+    const timeoutId = window.setTimeout(() => {
+      loadGroups();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadGroups]);
 
   const handleJoinGroup = async (e: React.FormEvent) => {

@@ -5,6 +5,7 @@ import {
   useEffect,
   useCallback,
   useSyncExternalStore,
+  useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -13,6 +14,7 @@ import { PHASES, type Match, type Prediction } from "@/types/database";
 import MatchCard, { type OtherPrediction } from "@/components/MatchCard";
 import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CalendarDays, CheckCircle2, Clock3, Target } from "lucide-react";
 
 interface UserData {
   id: string;
@@ -161,7 +163,11 @@ export default function DashboardPage() {
       router.push("/");
       return;
     }
-    loadData();
+    const timeoutId = window.setTimeout(() => {
+      loadData();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [user, groupId, router, loadData]);
 
   useEffect(() => {
@@ -188,7 +194,39 @@ export default function DashboardPage() {
     [predictions]
   );
 
+  const handlePredictionSaved = useCallback((saved: Prediction) => {
+    setPredictions((current) => {
+      const existingIndex = current.findIndex((p) => p.match_id === saved.match_id);
+      if (existingIndex === -1) return [...current, saved];
+
+      const next = [...current];
+      next[existingIndex] = saved;
+      return next;
+    });
+  }, []);
+
   const allTabs = [...PHASES, TERMINADOS_TAB];
+
+  const dashboardStats = useMemo(() => {
+    const now = new Date();
+    const finished = matches.filter((m) => m.status === "FT").length;
+    const upcoming = matches.filter((m) => new Date(m.fecha_partido) > now);
+    const pending = upcoming.filter(
+      (m) => !predictions.some((p) => p.match_id === m.id)
+    ).length;
+    const nextMatch = upcoming[0] ?? null;
+    const progress =
+      matches.length > 0
+        ? Math.round((predictions.length / matches.length) * 100)
+        : 0;
+
+    return {
+      finished,
+      pending,
+      nextMatch,
+      progress,
+    };
+  }, [matches, predictions]);
 
   const getTabCount = (phase: string) => {
     if (phase === TERMINADOS_TAB) return matches.filter((m) => m.status === "FT").length;
@@ -215,6 +253,84 @@ export default function DashboardPage() {
             Realiza tus pronosticos para cada fase del Mundial
           </p>
         </motion.div>
+
+        {!loading && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6"
+          >
+            <div className="glass rounded-2xl p-3 sm:p-4">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <Target className="w-4 h-4" />
+                <span className="text-[11px] font-semibold uppercase tracking-wide">
+                  Progreso
+                </span>
+              </div>
+              <p className="mt-2 text-2xl font-bold text-foreground">
+                {dashboardStats.progress}%
+              </p>
+              <div className="mt-2 h-2 rounded-full bg-slate-200/80 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-amber-400"
+                  style={{ width: `${Math.min(dashboardStats.progress, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="glass rounded-2xl p-3 sm:p-4">
+              <div className="flex items-center gap-2 text-amber-700">
+                <Clock3 className="w-4 h-4" />
+                <span className="text-[11px] font-semibold uppercase tracking-wide">
+                  Pendientes
+                </span>
+              </div>
+              <p className="mt-2 text-2xl font-bold text-foreground">
+                {dashboardStats.pending}
+              </p>
+              <p className="text-xs text-muted-foreground">por pronosticar</p>
+            </div>
+
+            <div className="glass rounded-2xl p-3 sm:p-4">
+              <div className="flex items-center gap-2 text-sky-700">
+                <CalendarDays className="w-4 h-4" />
+                <span className="text-[11px] font-semibold uppercase tracking-wide">
+                  Proximo
+                </span>
+              </div>
+              <p className="mt-2 text-sm font-bold text-foreground truncate">
+                {dashboardStats.nextMatch
+                  ? `${dashboardStats.nextMatch.equipo_local} vs ${dashboardStats.nextMatch.equipo_visitante}`
+                  : "Sin partidos"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {dashboardStats.nextMatch
+                  ? new Date(
+                      dashboardStats.nextMatch.fecha_partido
+                    ).toLocaleDateString("es-ES", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "por ahora"}
+              </p>
+            </div>
+
+            <div className="glass rounded-2xl p-3 sm:p-4">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="text-[11px] font-semibold uppercase tracking-wide">
+                  Cerrados
+                </span>
+              </div>
+              <p className="mt-2 text-2xl font-bold text-foreground">
+                {dashboardStats.finished}
+              </p>
+              <p className="text-xs text-muted-foreground">con resultado</p>
+            </div>
+          </motion.div>
+        )}
 
         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 sm:mb-6 scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
           {allTabs.map((phase) => {
@@ -281,6 +397,7 @@ export default function DashboardPage() {
                 prediction={getPrediction(match.id)}
                 otherPredictions={otherPredictionsMap[match.id] ?? []}
                 userId={user.id}
+                onPredictionSaved={handlePredictionSaved}
               />
             ))}
           </div>

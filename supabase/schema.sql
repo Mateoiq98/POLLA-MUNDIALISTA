@@ -76,6 +76,7 @@ CREATE INDEX idx_matches_updated_at ON matches(updated_at);
 CREATE INDEX idx_predictions_user_id ON predictions(user_id);
 CREATE INDEX idx_predictions_match_id ON predictions(match_id);
 CREATE INDEX idx_users_nombre ON users(nombre);
+CREATE INDEX idx_users_puntos_totales ON users(puntos_totales DESC);
 CREATE INDEX idx_group_members_group ON group_members(group_id);
 CREATE INDEX idx_group_members_user ON group_members(user_id);
 

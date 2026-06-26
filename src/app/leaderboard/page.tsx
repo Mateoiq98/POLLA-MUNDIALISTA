@@ -3,12 +3,14 @@
 import { useState, useEffect, useCallback, useSyncExternalStore, useMemo } from "react";
 import { motion } from "framer-motion";
 import { createBrowserClient } from "@/lib/supabase/client";
-import { Trophy, Medal, Crown, Star, RefreshCw, Users } from "lucide-react";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { Trophy, Medal, Crown, Star, RefreshCw, Users, TrendingUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const REFRESH_INTERVAL = 30000;
+const LEADERBOARD_CACHE_PREFIX = "polla_leaderboard:";
 
 function getGroupId() {
   if (typeof window === "undefined") return null;
@@ -32,6 +34,141 @@ interface Entry {
   nombre: string;
   avatar_url: string | null;
   puntos_totales: number;
+}
+
+interface LeaderboardData {
+  entries: Entry[];
+  groupName: string;
+  updatedAt: number;
+}
+
+type JoinedValue<T> = T | T[] | null;
+
+interface MemberLeaderboardRow {
+  users: JoinedValue<Entry>;
+  groups: JoinedValue<{ name: string }>;
+}
+
+const inFlightLeaderboardRequests = new Map<string, Promise<LeaderboardData>>();
+
+function cacheKey(groupId: string | null) {
+  return `${LEADERBOARD_CACHE_PREFIX}${groupId ?? "global"}`;
+}
+
+function getSingle<T>(value: JoinedValue<T>): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
+
+function sortEntries(entries: Entry[]) {
+  return [...entries].sort((a, b) => b.puntos_totales - a.puntos_totales);
+}
+
+function readCachedLeaderboard(groupId: string | null): LeaderboardData | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = sessionStorage.getItem(cacheKey(groupId));
+    return raw ? (JSON.parse(raw) as LeaderboardData) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedLeaderboard(groupId: string | null, data: LeaderboardData) {
+  if (typeof window === "undefined") return;
+
+  try {
+    sessionStorage.setItem(cacheKey(groupId), JSON.stringify(data));
+  } catch {
+    // Cache is only a speed boost; ignore storage failures.
+  }
+}
+
+async function fetchGlobalLeaderboard(
+  supabase: SupabaseClient
+): Promise<LeaderboardData> {
+  const { data } = await supabase
+    .from("users")
+    .select("id, nombre, avatar_url, puntos_totales")
+    .order("puntos_totales", { ascending: false });
+
+  return {
+    entries: data ?? [],
+    groupName: "",
+    updatedAt: Date.now(),
+  };
+}
+
+async function fetchGroupLeaderboard(
+  supabase: SupabaseClient,
+  groupId: string
+): Promise<LeaderboardData> {
+  const { data, error } = await supabase
+    .from("group_members")
+    .select("users(id, nombre, avatar_url, puntos_totales), groups(name)")
+    .eq("group_id", groupId);
+
+  if (!error && data) {
+    const rows = data as unknown as MemberLeaderboardRow[];
+    const entries = rows
+      .map((row) => getSingle(row.users))
+      .filter((entry): entry is Entry => Boolean(entry));
+    const groupName =
+      rows.map((row) => getSingle(row.groups)?.name).find(Boolean) ?? "";
+
+    return {
+      entries: sortEntries(entries),
+      groupName,
+      updatedAt: Date.now(),
+    };
+  }
+
+  const [groupRes, membersRes] = await Promise.all([
+    supabase.from("groups").select("name").eq("id", groupId).single(),
+    supabase.from("group_members").select("user_id").eq("group_id", groupId),
+  ]);
+
+  const memberIds = (membersRes.data || []).map((m) => m.user_id);
+
+  if (memberIds.length === 0) {
+    return {
+      entries: [],
+      groupName: groupRes.data?.name ?? "",
+      updatedAt: Date.now(),
+    };
+  }
+
+  const { data: users } = await supabase
+    .from("users")
+    .select("id, nombre, avatar_url, puntos_totales")
+    .in("id", memberIds)
+    .order("puntos_totales", { ascending: false });
+
+  return {
+    entries: users ?? [],
+    groupName: groupRes.data?.name ?? "",
+    updatedAt: Date.now(),
+  };
+}
+
+function fetchLeaderboard(
+  supabase: SupabaseClient,
+  groupId: string | null
+): Promise<LeaderboardData> {
+  const key = groupId ?? "global";
+  const existing = inFlightLeaderboardRequests.get(key);
+  if (existing) return existing;
+
+  const request = (groupId
+    ? fetchGroupLeaderboard(supabase, groupId)
+    : fetchGlobalLeaderboard(supabase)
+  ).finally(() => {
+    inFlightLeaderboardRequests.delete(key);
+  });
+
+  inFlightLeaderboardRequests.set(key, request);
+  return request;
 }
 
 const RankIcon = ({ rank }: { rank: number }) => {
@@ -63,53 +200,36 @@ export default function LeaderboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const supabase = createBrowserClient();
 
-  const loadEntries = useCallback(async () => {
+  const applyLeaderboard = useCallback((data: LeaderboardData) => {
+    setEntries(data.entries);
+    setGroupName(data.groupName);
+    setLastUpdate(new Date(data.updatedAt));
+  }, []);
+
+  const loadEntries = useCallback(async (useCache = false) => {
     try {
-      if (!groupId) {
-        const { data } = await supabase
-          .from("users")
-          .select("id, nombre, avatar_url, puntos_totales")
-          .order("puntos_totales", { ascending: false });
-        if (data) setEntries(data);
-        setGroupName("");
-        setLastUpdate(new Date());
+      const cached = useCache ? readCachedLeaderboard(groupId) : null;
+      if (cached) {
+        applyLeaderboard(cached);
         setLoading(false);
-        return;
       }
 
-      const [groupRes, membersRes] = await Promise.all([
-        supabase.from("groups").select("name").eq("id", groupId).single(),
-        supabase.from("group_members").select("user_id").eq("group_id", groupId),
-      ]);
-
-      if (groupRes.data) setGroupName(groupRes.data.name);
-
-      const memberIds = (membersRes.data || []).map((m) => m.user_id);
-
-      if (memberIds.length === 0) {
-        setEntries([]);
-        setLastUpdate(new Date());
-        setLoading(false);
-        return;
-      }
-
-      const { data } = await supabase
-        .from("users")
-        .select("id, nombre, avatar_url, puntos_totales")
-        .in("id", memberIds)
-        .order("puntos_totales", { ascending: false });
-
-      if (data) setEntries(data);
-      setLastUpdate(new Date());
+      const fresh = await fetchLeaderboard(supabase, groupId);
+      writeCachedLeaderboard(groupId, fresh);
+      applyLeaderboard(fresh);
     } catch {
       // Handle silently
     } finally {
       setLoading(false);
     }
-  }, [supabase, groupId]);
+  }, [supabase, groupId, applyLeaderboard]);
 
   useEffect(() => {
-    loadEntries();
+    const timeoutId = window.setTimeout(() => {
+      loadEntries(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadEntries]);
 
   useEffect(() => {
@@ -121,6 +241,22 @@ export default function LeaderboardPage() {
   }, [loadEntries]);
 
   const getRankStyle = (rank: number) => rankStyles[rank] || rankStyles[0];
+
+  const leaderboardStats = useMemo(() => {
+    const leader = entries[0] ?? null;
+    const totalPoints = entries.reduce(
+      (sum, entry) => sum + entry.puntos_totales,
+      0
+    );
+    const average =
+      entries.length > 0 ? Math.round(totalPoints / entries.length) : 0;
+
+    return {
+      leader,
+      average,
+      participants: entries.length,
+    };
+  }, [entries]);
 
   return (
     <div className="min-h-screen">
@@ -149,6 +285,32 @@ export default function LeaderboardPage() {
             </span>
           </div>
         </motion.div>
+
+        {!loading && entries.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
+            <div className="glass rounded-2xl p-3 text-center">
+              <Crown className="w-4 h-4 mx-auto text-amber-700" />
+              <p className="mt-1 text-xs text-muted-foreground">Lider</p>
+              <p className="text-sm font-bold text-foreground truncate">
+                {leaderboardStats.leader?.nombre}
+              </p>
+            </div>
+            <div className="glass rounded-2xl p-3 text-center">
+              <Users className="w-4 h-4 mx-auto text-emerald-700" />
+              <p className="mt-1 text-xs text-muted-foreground">Jugadores</p>
+              <p className="text-sm font-bold text-foreground">
+                {leaderboardStats.participants}
+              </p>
+            </div>
+            <div className="glass rounded-2xl p-3 text-center">
+              <TrendingUp className="w-4 h-4 mx-auto text-sky-700" />
+              <p className="mt-1 text-xs text-muted-foreground">Promedio</p>
+              <p className="text-sm font-bold text-foreground">
+                {leaderboardStats.average} pts
+              </p>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="space-y-3">

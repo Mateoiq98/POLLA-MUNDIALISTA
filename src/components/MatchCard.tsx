@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Minus, Plus, Lock, Check, Eye, EyeOff } from "lucide-react";
+import { Lock, Check, Eye, EyeOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Match, Prediction } from "@/types/database";
@@ -23,9 +23,12 @@ interface MatchCardProps {
   prediction: Prediction | null;
   otherPredictions: OtherPrediction[];
   userId: string;
+  onPredictionSaved?: (prediction: Prediction) => void;
 }
 
-function ScoreControl({
+type SaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
+
+function ScoreInput({
   value,
   onChange,
   disabled,
@@ -34,26 +37,23 @@ function ScoreControl({
   onChange: (v: number) => void;
   disabled: boolean;
 }) {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = event.target.value.replace(/\D/g, "").slice(0, 2);
+    onChange(digits ? Number(digits) : 0);
+  };
+
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2">
-      <button
-        onClick={() => onChange(Math.max(0, value - 1))}
-        disabled={disabled || value <= 0}
-        className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-foreground hover:bg-white/10 hover:border-yellow-500/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
-      >
-        <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-      </button>
-      <span className="w-6 sm:w-8 text-center text-lg sm:text-xl font-bold tabular-nums text-foreground">
-        {value}
-      </span>
-      <button
-        onClick={() => onChange(Math.min(12, value + 1))}
-        disabled={disabled || value >= 12}
-        className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-foreground hover:bg-white/10 hover:border-yellow-500/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
-      >
-        <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-      </button>
-    </div>
+    <input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      value={value}
+      onChange={handleChange}
+      onFocus={(event) => event.target.select()}
+      disabled={disabled}
+      aria-label="Marcador"
+      className="w-11 h-10 sm:w-12 sm:h-11 rounded-xl bg-white/70 border border-slate-900/10 text-center text-lg sm:text-xl font-bold tabular-nums text-foreground shadow-inner outline-none transition-all focus:border-emerald-600/35 focus:ring-4 focus:ring-emerald-600/10 disabled:opacity-50 disabled:cursor-not-allowed"
+    />
   );
 }
 
@@ -62,12 +62,19 @@ export default function MatchCard({
   prediction,
   otherPredictions,
   userId,
+  onPredictionSaved,
 }: MatchCardProps) {
   const [predLocal, setPredLocal] = useState(
     prediction?.pred_goles_local ?? 0
   );
   const [predVisit, setPredVisit] = useState(
     prediction?.pred_goles_visitante ?? 0
+  );
+  const [savedPrediction, setSavedPrediction] = useState<Prediction | null>(
+    prediction
+  );
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>(
+    prediction ? "saved" : "idle"
   );
   const [saving, setSaving] = useState(false);
   const [showOthers, setShowOthers] = useState(false);
@@ -77,43 +84,105 @@ export default function MatchCard({
     match.status === "FT" || new Date(match.fecha_partido) < new Date();
 
   const hasChanges = useMemo(() => {
-    const origLocal = prediction?.pred_goles_local ?? 0;
-    const origVisit = prediction?.pred_goles_visitante ?? 0;
+    const origLocal = savedPrediction?.pred_goles_local ?? 0;
+    const origVisit = savedPrediction?.pred_goles_visitante ?? 0;
     return predLocal !== origLocal || predVisit !== origVisit;
-  }, [predLocal, predVisit, prediction]);
+  }, [predLocal, predVisit, savedPrediction]);
 
-  const handleSave = async () => {
+  const setPendingStatus = useCallback(
+    (nextLocal: number, nextVisit: number) => {
+      const origLocal = savedPrediction?.pred_goles_local ?? 0;
+      const origVisit = savedPrediction?.pred_goles_visitante ?? 0;
+      const nextHasChanges = nextLocal !== origLocal || nextVisit !== origVisit;
+      setSaveStatus(nextHasChanges ? "pending" : savedPrediction ? "saved" : "idle");
+    },
+    [savedPrediction]
+  );
+
+  const handleLocalChange = useCallback(
+    (value: number) => {
+      setPredLocal(value);
+      setPendingStatus(value, predVisit);
+    },
+    [predVisit, setPendingStatus]
+  );
+
+  const handleVisitChange = useCallback(
+    (value: number) => {
+      setPredVisit(value);
+      setPendingStatus(predLocal, value);
+    },
+    [predLocal, setPendingStatus]
+  );
+
+  const savePrediction = useCallback(async () => {
+    if (isLocked) return;
+
     setSaving(true);
+    setSaveStatus("saving");
+
     try {
-      if (prediction) {
-        const { error } = await supabase
-          .from("predictions")
-          .update({
+      const { data, error } = await supabase
+        .from("predictions")
+        .upsert(
+          {
+            id: savedPrediction?.id,
+            user_id: userId,
+            match_id: match.id,
             pred_goles_local: predLocal,
             pred_goles_visitante: predVisit,
             procesado: false,
             puntos_ganados: 0,
-          })
-          .eq("id", prediction.id);
+          },
+          { onConflict: "user_id,match_id" }
+        )
+        .select("*")
+        .single();
 
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("predictions").insert({
+      if (error) throw error;
+
+      const nextPrediction =
+        (data as Prediction | null) ??
+        ({
+          id: savedPrediction?.id ?? crypto.randomUUID(),
           user_id: userId,
           match_id: match.id,
           pred_goles_local: predLocal,
           pred_goles_visitante: predVisit,
-        });
+          puntos_ganados: 0,
+          procesado: false,
+          created_at: savedPrediction?.created_at ?? new Date().toISOString(),
+        } satisfies Prediction);
 
-        if (error) throw error;
-      }
-      toast.success("Pronostico guardado");
+      setSavedPrediction(nextPrediction);
+      onPredictionSaved?.(nextPrediction);
+      setSaveStatus("saved");
     } catch {
+      setSaveStatus("error");
       toast.error("Error al guardar el pronostico");
     } finally {
       setSaving(false);
     }
-  };
+  }, [
+    isLocked,
+    match.id,
+    onPredictionSaved,
+    predLocal,
+    predVisit,
+    savedPrediction,
+    supabase,
+    userId,
+  ]);
+
+  useEffect(() => {
+    if (isLocked || !hasChanges) return;
+
+    const timeoutId = window.setTimeout(() => {
+      savePrediction();
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [hasChanges, isLocked, predLocal, predVisit, savePrediction]);
 
   const getStatusBadge = () => {
     if (match.status === "FT") {
@@ -192,17 +261,17 @@ export default function MatchCard({
             </div>
           ) : (
             <div className="flex items-center gap-2 sm:gap-3">
-              <ScoreControl
+              <ScoreInput
                 value={predLocal}
-                onChange={setPredLocal}
+                onChange={handleLocalChange}
                 disabled={isLocked || saving}
               />
               <span className="text-muted-foreground text-base sm:text-lg">
                 :
               </span>
-              <ScoreControl
+              <ScoreInput
                 value={predVisit}
-                onChange={setPredVisit}
+                onChange={handleVisitChange}
                 disabled={isLocked || saving}
               />
             </div>
@@ -233,6 +302,59 @@ export default function MatchCard({
               minute: "2-digit",
             })}
           </p>
+
+          {!isLocked && (
+            <div className="h-5 mt-0.5 flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                {saveStatus === "pending" && (
+                  <motion.span
+                    key="pending"
+                    initial={{ opacity: 0, y: 2 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -2 }}
+                    className="text-[10px] text-muted-foreground"
+                  >
+                    Guardando en 3s
+                  </motion.span>
+                )}
+                {saveStatus === "saving" && (
+                  <motion.span
+                    key="saving"
+                    initial={{ opacity: 0, y: 2 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -2 }}
+                    className="inline-flex items-center gap-1.5 text-[10px] text-amber-700"
+                  >
+                    <span className="w-3 h-3 rounded-full border-2 border-amber-600/40 border-t-amber-700 animate-spin" />
+                    Guardando
+                  </motion.span>
+                )}
+                {saveStatus === "saved" && (
+                  <motion.span
+                    key="saved"
+                    initial={{ opacity: 0, y: 2 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -2 }}
+                    className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700"
+                  >
+                    <Check className="w-3 h-3" />
+                    Guardado
+                  </motion.span>
+                )}
+                {saveStatus === "error" && (
+                  <motion.span
+                    key="error"
+                    initial={{ opacity: 0, y: 2 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -2 }}
+                    className="text-[10px] font-medium text-red-400"
+                  >
+                    No se guardo
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 text-center min-w-0">
@@ -322,24 +444,14 @@ export default function MatchCard({
         </div>
       )}
 
-      {!isLocked && (
+      {!isLocked && hasChanges && !saving && saveStatus === "error" && (
         <motion.button
-          onClick={handleSave}
-          disabled={saving || !hasChanges}
-          whileHover={{ scale: hasChanges ? 1.02 : 1 }}
-          whileTap={{ scale: hasChanges ? 0.98 : 1 }}
-          className="w-full mt-3 sm:mt-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={savePrediction}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full mt-3 sm:mt-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
         >
-          {saving ? (
-            <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
-          ) : hasChanges ? (
-            <>
-              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Guardar
-            </>
-          ) : (
-            "Sin cambios"
-          )}
+          Reintentar guardado
         </motion.button>
       )}
     </div>

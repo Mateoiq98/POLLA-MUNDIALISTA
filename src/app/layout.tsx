@@ -17,7 +17,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#22d3ee",
+  themeColor: "#f7f3df",
 };
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Polla Mundial",
   },
 };
@@ -39,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
         <link rel="apple-touch-icon" href="/icon.svg" />
@@ -47,14 +47,15 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster
-          theme="dark"
+          theme="light"
           position="top-center"
           toastOptions={{
             style: {
-              background: "rgba(22, 27, 34, 0.9)",
+              background: "rgba(255, 255, 255, 0.92)",
               backdropFilter: "blur(12px)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              color: "#f8fafc",
+              border: "1px solid rgba(15, 23, 42, 0.1)",
+              color: "#1f2937",
+              boxShadow: "0 18px 45px rgba(15, 23, 42, 0.12)",
             },
           }}
         />

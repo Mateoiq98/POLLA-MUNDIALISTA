@@ -9,8 +9,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Menu,
-  X,
   Users,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,6 +23,12 @@ interface UserData {
 interface UserGroup {
   id: string;
   name: string;
+}
+
+type JoinedValue<T> = T | T[] | null;
+
+interface UserGroupRow {
+  groups: JoinedValue<UserGroup>;
 }
 
 const PUBLIC_NAV = [
@@ -71,6 +75,11 @@ function subscribeGroupId() {
   return () => {};
 }
 
+function getSingle<T>(value: JoinedValue<T>): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -85,13 +94,25 @@ export default function Navbar() {
     getGroupIdSnapshot,
     getGroupIdServerSnapshot
   );
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
   const supabase = createBrowserClient();
 
   useEffect(() => {
     if (!user) return;
     const loadGroups = async () => {
+      const { data: joinedRows, error } = await supabase
+        .from("group_members")
+        .select("groups(id, name)")
+        .eq("user_id", user.id);
+
+      if (!error && joinedRows) {
+        const groups = (joinedRows as unknown as UserGroupRow[])
+          .map((row) => getSingle(row.groups))
+          .filter((group): group is UserGroup => Boolean(group));
+        setUserGroups(groups);
+        return;
+      }
+
       const { data: memberRows } = await supabase
         .from("group_members")
         .select("group_id")
@@ -128,7 +149,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 glass-strong border-b border-white/10 w-full">
+    <>
+      <nav className="sticky top-0 z-50 glass-strong border-b border-white/10 w-full">
       <div className="w-full max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         <button
           onClick={() => (user ? router.push("/dashboard") : router.push("/"))}
@@ -196,17 +218,6 @@ export default function Navbar() {
               </button>
             </>
           )}
-
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-foreground transition-all"
-          >
-            {mobileOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
-          </button>
         </div>
       </div>
 
@@ -239,65 +250,46 @@ export default function Navbar() {
           ))}
         </div>
       )}
-
-      {mobileOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="md:hidden border-t border-white/10 bg-card/95 backdrop-blur-xl"
+      </nav>
+      <div className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-slate-900/10 bg-white/88 backdrop-blur-2xl shadow-[0_-12px_35px_rgba(15,23,42,0.12)]">
+        <div
+          className="mx-auto grid max-w-5xl px-2 pt-2 pb-[calc(0.55rem+env(safe-area-inset-bottom))]"
+          style={{
+            gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
+          }}
         >
-          <div className="p-4 space-y-2">
-            {userGroups.length > 1 && (
-              <div className="pb-2 mb-2 border-b border-white/10">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                  Grupos
-                </p>
-                <div className="flex gap-2 flex-wrap">
-                  {userGroups.map((g) => (
-                    <button
-                      key={g.id}
-                      onClick={() => {
-                        switchGroup(g.id);
-                        setMobileOpen(false);
-                      }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                        g.id === groupId
-                          ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                          : "text-muted-foreground border border-white/10 hover:text-foreground"
-                      }`}
-                    >
-                      <Users className="w-3 h-3" />
-                      {g.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <button
-                  key={item.href}
-                  onClick={() => {
-                    router.push(item.href);
-                    setMobileOpen(false);
-                  }}
-                  className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${
-                    isActive
-                      ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                      : "text-muted-foreground hover:bg-white/5"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-        </motion.div>
-      )}
-    </nav>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            return (
+              <button
+                key={item.href}
+                onClick={() => router.push(item.href)}
+                className={`relative flex h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-semibold transition-all ${
+                  isActive
+                    ? "text-emerald-700"
+                    : "text-muted-foreground hover:bg-slate-900/[0.04] hover:text-foreground"
+                }`}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="mobile-nav-indicator"
+                    className="absolute inset-1 rounded-2xl bg-emerald-600/10 ring-1 ring-emerald-700/15"
+                    transition={{
+                      type: "spring",
+                      bounce: 0.22,
+                      duration: 0.5,
+                    }}
+                  />
+                )}
+                <Icon className="relative z-10 w-5 h-5" />
+                <span className="relative z-10 leading-none">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 }
