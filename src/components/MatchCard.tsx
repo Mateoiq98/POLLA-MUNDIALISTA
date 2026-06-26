@@ -23,7 +23,6 @@ interface MatchCardProps {
   prediction: Prediction | null;
   otherPredictions: OtherPrediction[];
   userId: string;
-  index: number;
 }
 
 function ScoreControl({
@@ -63,7 +62,6 @@ export default function MatchCard({
   prediction,
   otherPredictions,
   userId,
-  index,
 }: MatchCardProps) {
   const [predLocal, setPredLocal] = useState(
     prediction?.pred_goles_local ?? 0
@@ -138,11 +136,8 @@ export default function MatchCard({
   const isFinished = match.status === "FT";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      className={`glass rounded-2xl p-3 sm:p-5 transition-all ${
+    <div
+      className={`glass rounded-2xl p-3 sm:p-5 transition-all duration-200 ${
         isLocked && !isFinished ? "opacity-75" : ""
       } ${isFinished ? "border-green-500/20" : ""}`}
     >
@@ -347,6 +342,6 @@ export default function MatchCard({
           )}
         </motion.button>
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore, useMemo } from "react";
 import { motion } from "framer-motion";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { Trophy, Medal, Crown, Star, RefreshCw, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { LeaderboardEntry } from "@/types/database";
 
 const REFRESH_INTERVAL = 30000;
 
@@ -16,141 +15,112 @@ function getGroupId() {
   return localStorage.getItem("polla_group");
 }
 
+function getGroupIdSnapshot() {
+  return getGroupId();
+}
+
+function getGroupIdServerSnapshot() {
+  return null;
+}
+
+function subscribeGroupId() {
+  return () => {};
+}
+
+interface Entry {
+  id: string;
+  nombre: string;
+  avatar_url: string | null;
+  puntos_totales: number;
+}
+
+const RankIcon = ({ rank }: { rank: number }) => {
+  switch (rank) {
+    case 1:
+      return <Crown className="w-5 h-5 text-yellow-400" />;
+    case 2:
+      return <Medal className="w-5 h-5 text-gray-300" />;
+    case 3:
+      return <Medal className="w-5 h-5 text-amber-600" />;
+    default:
+      return <Star className="w-4 h-4 text-muted-foreground" />;
+  }
+};
+
+const rankStyles = [
+  "",
+  "border-yellow-500/30 bg-yellow-500/5",
+  "border-gray-400/20 bg-gray-400/5",
+  "border-amber-600/20 bg-amber-600/5",
+];
+
 export default function LeaderboardPage() {
-  const groupId = getGroupId();
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const groupId = useSyncExternalStore(subscribeGroupId, getGroupIdSnapshot, getGroupIdServerSnapshot);
+  const [entries, setEntries] = useState<Entry[]>([]);
   const [groupName, setGroupName] = useState("");
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [refreshing, setRefreshing] = useState(false);
   const supabase = createBrowserClient();
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        if (!groupId) {
-          const { data } = await supabase
-            .from("users")
-            .select("id, nombre, avatar_url, puntos_totales")
-            .order("puntos_totales", { ascending: false });
-          if (data) setEntries(data);
-          setLastUpdate(new Date());
-          setLoading(false);
-          return;
-        }
-
-        const { data: groupData } = await supabase
-          .from("groups")
-          .select("name")
-          .eq("id", groupId)
-          .single();
-        if (groupData) setGroupName(groupData.name);
-
-        const { data: memberRows } = await supabase
-          .from("group_members")
-          .select("user_id")
-          .eq("group_id", groupId);
-        const memberIds = (memberRows || []).map((m) => m.user_id);
-
-        if (memberIds.length === 0) {
-          setEntries([]);
-          setLastUpdate(new Date());
-          setLoading(false);
-          return;
-        }
-
+  const loadEntries = useCallback(async () => {
+    try {
+      if (!groupId) {
         const { data } = await supabase
           .from("users")
           .select("id, nombre, avatar_url, puntos_totales")
-          .in("id", memberIds)
           .order("puntos_totales", { ascending: false });
-
         if (data) setEntries(data);
+        setGroupName("");
         setLastUpdate(new Date());
-      } catch {
-        // Handle silently
-      } finally {
         setLoading(false);
+        return;
       }
-    };
 
-    load();
+      const [groupRes, membersRes] = await Promise.all([
+        supabase.from("groups").select("name").eq("id", groupId).single(),
+        supabase.from("group_members").select("user_id").eq("group_id", groupId),
+      ]);
+
+      if (groupRes.data) setGroupName(groupRes.data.name);
+
+      const memberIds = (membersRes.data || []).map((m) => m.user_id);
+
+      if (memberIds.length === 0) {
+        setEntries([]);
+        setLastUpdate(new Date());
+        setLoading(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("users")
+        .select("id, nombre, avatar_url, puntos_totales")
+        .in("id", memberIds)
+        .order("puntos_totales", { ascending: false });
+
+      if (data) setEntries(data);
+      setLastUpdate(new Date());
+    } catch {
+      // Handle silently
+    } finally {
+      setLoading(false);
+    }
   }, [supabase, groupId]);
 
   useEffect(() => {
+    loadEntries();
+  }, [loadEntries]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
-      const refresh = async () => {
-        setRefreshing(true);
-        try {
-          if (!groupId) {
-            const { data } = await supabase
-              .from("users")
-              .select("id, nombre, avatar_url, puntos_totales")
-              .order("puntos_totales", { ascending: false });
-            if (data) setEntries(data);
-            setLastUpdate(new Date());
-            setRefreshing(false);
-            return;
-          }
-
-          const { data: memberRows } = await supabase
-            .from("group_members")
-            .select("user_id")
-            .eq("group_id", groupId);
-          const memberIds = (memberRows || []).map((m) => m.user_id);
-
-          if (memberIds.length === 0) {
-            setEntries([]);
-            setLastUpdate(new Date());
-            setRefreshing(false);
-            return;
-          }
-
-          const { data } = await supabase
-            .from("users")
-            .select("id, nombre, avatar_url, puntos_totales")
-            .in("id", memberIds)
-            .order("puntos_totales", { ascending: false });
-
-          if (data) setEntries(data);
-          setLastUpdate(new Date());
-        } catch {
-          // Handle silently
-        } finally {
-          setRefreshing(false);
-        }
-      };
-      refresh();
+      setRefreshing(true);
+      loadEntries().finally(() => setRefreshing(false));
     }, REFRESH_INTERVAL);
-
     return () => clearInterval(interval);
-  }, [supabase, groupId]);
+  }, [loadEntries]);
 
-  const getRankIcon = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return <Crown className="w-5 h-5 text-yellow-400" />;
-      case 2:
-        return <Medal className="w-5 h-5 text-gray-300" />;
-      case 3:
-        return <Medal className="w-5 h-5 text-amber-600" />;
-      default:
-        return <Star className="w-4 h-4 text-muted-foreground" />;
-    }
-  };
-
-  const getRankStyle = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return "border-yellow-500/30 bg-yellow-500/5";
-      case 2:
-        return "border-gray-400/20 bg-gray-400/5";
-      case 3:
-        return "border-amber-600/20 bg-amber-600/5";
-      default:
-        return "border-white/5 bg-white/[0.02]";
-    }
-  };
+  const getRankStyle = (rank: number) => rankStyles[rank] || rankStyles[0];
 
   return (
     <div className="min-h-screen">
@@ -204,17 +174,15 @@ export default function LeaderboardPage() {
         ) : (
           <div className="space-y-3">
             {entries.map((entry, index) => (
-              <motion.div
+              <div
                 key={entry.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                className={`glass rounded-2xl p-4 flex items-center gap-4 border transition-all hover:bg-white/[0.03] ${getRankStyle(
+                className={`glass rounded-2xl p-4 flex items-center gap-4 border transition-all duration-200 hover:bg-white/[0.03] ${getRankStyle(
                   index + 1
                 )}`}
+                style={{ animationDelay: `${index * 30}ms` }}
               >
                 <div className="w-8 flex items-center justify-center">
-                  {getRankIcon(index + 1)}
+                  <RankIcon rank={index + 1} />
                 </div>
 
                 <div className="text-lg font-bold text-muted-foreground w-8 text-center">
@@ -222,8 +190,8 @@ export default function LeaderboardPage() {
                 </div>
 
                 <Avatar className="w-12 h-12 border-2 border-white/10">
-                  <AvatarImage src={entry.avatar_url || undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-yellow-500/20 to-green-500/20 text-yellow-400 font-bold">
+                  <AvatarImage src={entry.avatar_url || undefined} loading="lazy" />
+                  <AvatarFallback className="bg-gradient-to-br from-yellow-500/20 to-green-500/20 text-yellow-400 font-bold">
                     {entry.nombre.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -245,7 +213,7 @@ export default function LeaderboardPage() {
                     pts
                   </p>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         )}

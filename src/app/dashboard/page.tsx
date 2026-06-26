@@ -7,7 +7,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { PHASES, type Match, type Prediction } from "@/types/database";
 import MatchCard, { type OtherPrediction } from "@/components/MatchCard";
@@ -255,54 +255,36 @@ export default function DashboardPage() {
           })}
         </div>
 
-        <AnimatePresence mode="wait">
-          {loading ? (
-            <motion.div
-              key="skeleton"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="grid gap-3 sm:gap-4 sm:grid-cols-2"
-            >
-              {Array.from({ length: 4 }).map((_, i) => (
-                <MatchSkeleton key={i} />
-              ))}
-            </motion.div>
-          ) : filteredMatches.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="glass rounded-2xl p-8 sm:p-12 text-center"
-            >
-              <p className="text-muted-foreground text-sm">
-                {activePhase === TERMINADOS_TAB
-                  ? "No hay partidos finalizados aun."
-                  : "No hay partidos programados para esta fase aun."}
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div
-              key={activePhase}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="grid gap-3 sm:gap-4 sm:grid-cols-2"
-            >
-              {filteredMatches.map((match, index) => (
-                <MatchCard
-                  key={match.id}
-                  match={match}
-                  prediction={getPrediction(match.id)}
-                  otherPredictions={otherPredictionsMap[match.id] ?? []}
-                  userId={user.id}
-                  index={index}
-                />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {loading ? (
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <MatchSkeleton key={i} />
+            ))}
+          </div>
+        ) : filteredMatches.length === 0 ? (
+          <div className="glass rounded-2xl p-8 sm:p-12 text-center">
+            <p className="text-muted-foreground text-sm">
+              {activePhase === TERMINADOS_TAB
+                ? "No hay partidos finalizados aun."
+                : "No hay partidos programados para esta fase aun."}
+            </p>
+          </div>
+        ) : (
+          <div
+            key={activePhase}
+            className="grid gap-3 sm:gap-4 sm:grid-cols-2 animate-in fade-in duration-200"
+          >
+            {filteredMatches.map((match) => (
+              <MatchCard
+                key={match.id}
+                match={match}
+                prediction={getPrediction(match.id)}
+                otherPredictions={otherPredictionsMap[match.id] ?? []}
+                userId={user.id}
+              />
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
