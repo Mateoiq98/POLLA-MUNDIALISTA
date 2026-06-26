@@ -196,7 +196,7 @@ export default function GroupSelector({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
       </div>
     );
   }
@@ -214,8 +214,8 @@ export default function GroupSelector({
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-6"
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 mb-4">
-              <Users className="w-8 h-8 text-cyan-400" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-green-500/20 border border-yellow-500/30 mb-4">
+              <Users className="w-8 h-8 text-yellow-400" />
             </div>
             <h1 className="text-2xl font-bold text-gradient">Grupos</h1>
             <p className="text-muted-foreground text-sm mt-1">
@@ -249,10 +249,10 @@ export default function GroupSelector({
                         setView("join");
                       }
                     }}
-                    className="w-full glass rounded-xl p-4 flex items-center gap-4 border border-white/5 hover:border-cyan-500/30 transition-all"
+                    className="w-full glass rounded-xl p-4 flex items-center gap-4 border border-white/5 hover:border-yellow-500/30 transition-all"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                      <Users className="w-6 h-6 text-cyan-400" />
+                        <div className="w-12 h-12 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                      <Users className="w-6 h-6 text-yellow-400" />
                     </div>
                     <div className="flex-1 text-left">
                       <p className="font-semibold text-foreground">
@@ -261,7 +261,7 @@ export default function GroupSelector({
                       <p className="text-xs text-muted-foreground">
                         {group.member_count}/{group.max_participants} miembros
                         {group.is_member && (
-                          <span className="text-cyan-400 ml-2">● Unido</span>
+                          <span className="text-yellow-400 ml-2">● Unido</span>
                         )}
                       </p>
                     </div>
@@ -276,7 +276,7 @@ export default function GroupSelector({
                 <div className="flex gap-3 pt-4">
                   <button
                     onClick={() => setView("join")}
-                    className={`${isAdmin ? "flex-1" : "w-full"} py-3 rounded-xl text-sm font-medium glass border border-white/10 text-muted-foreground hover:text-foreground hover:border-cyan-500/30 transition-all flex items-center justify-center gap-2`}
+                    className={`${isAdmin ? "flex-1" : "w-full"} py-3 rounded-xl text-sm font-medium glass border border-white/10 text-muted-foreground hover:text-foreground hover:border-yellow-500/30 transition-all flex items-center justify-center gap-2`}
                   >
                     <LogIn className="w-4 h-4" />
                     Unirse
@@ -284,7 +284,7 @@ export default function GroupSelector({
                   {isAdmin && (
                     <button
                       onClick={() => setView("create")}
-                      className="flex-1 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-cyan-500 to-emerald-500 text-white hover:from-cyan-400 hover:to-emerald-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
+                      className="flex-1 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-yellow-500 to-emerald-500 text-white hover:from-yellow-400 hover:to-emerald-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20"
                     >
                       <Plus className="w-4 h-4" />
                       Crear grupo
@@ -310,7 +310,7 @@ export default function GroupSelector({
                     setError("");
                     setGroupPassword("");
                   }}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-cyan-400 transition-colors"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-yellow-400 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Volver
@@ -319,7 +319,7 @@ export default function GroupSelector({
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
                     Unirse a{" "}
-                    <span className="text-cyan-400 font-medium">
+                      <span className="text-yellow-400 font-medium">
                       {groups.find((g) => g.id === selectedGroupId)?.name}
                     </span>
                   </p>
@@ -339,7 +339,7 @@ export default function GroupSelector({
                         setError("");
                       }}
                       placeholder="Contraseña del grupo"
-                      className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+                      className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 transition-all"
                       autoFocus
                     />
                   </div>
@@ -363,7 +363,7 @@ export default function GroupSelector({
                   disabled={submitting || !groupPassword}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3.5 bg-gradient-to-r from-yellow-500 to-emerald-500 text-white font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -395,7 +395,7 @@ export default function GroupSelector({
                     setGroupPassword("");
                     setConfirmPassword("");
                   }}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-cyan-400 transition-colors"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-yellow-400 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Volver
@@ -413,7 +413,7 @@ export default function GroupSelector({
                       setError("");
                     }}
                     placeholder="Ej: Familia, Master Gym..."
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50                     focus:outline-none focus:ring-2 focus:ring-yellow-500/50 transition-all"
                     autoFocus
                   />
                 </div>
@@ -430,7 +430,7 @@ export default function GroupSelector({
                     onChange={(e) =>
                       setMaxParticipants(parseInt(e.target.value) || 8)
                     }
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-yellow-500/50 transition-all"
                   />
                 </div>
 
@@ -446,7 +446,7 @@ export default function GroupSelector({
                       setError("");
                     }}
                     placeholder="Minimo 4 caracteres"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 transition-all"
                   />
                 </div>
 
@@ -462,7 +462,7 @@ export default function GroupSelector({
                       setError("");
                     }}
                     placeholder="Repite la contraseña"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 transition-all"
                   />
                 </div>
 
@@ -484,7 +484,7 @@ export default function GroupSelector({
                   disabled={submitting || !groupName || !groupPassword}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3.5 bg-gradient-to-r from-yellow-500 to-emerald-500 text-white font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

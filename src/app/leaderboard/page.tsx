@@ -161,7 +161,7 @@ export default function LeaderboardPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-green-500/20 border border-yellow-500/30 mb-4">
             <Trophy className="w-8 h-8 text-yellow-400" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">Tabla de Posiciones</h1>
@@ -223,7 +223,7 @@ export default function LeaderboardPage() {
 
                 <Avatar className="w-12 h-12 border-2 border-white/10">
                   <AvatarImage src={entry.avatar_url || undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 text-cyan-400 font-bold">
+                    <AvatarFallback className="bg-gradient-to-br from-yellow-500/20 to-green-500/20 text-yellow-400 font-bold">
                     {entry.nombre.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

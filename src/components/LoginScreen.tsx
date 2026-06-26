@@ -199,18 +199,18 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="w-full max-w-md"
       >
-        <div className="glass-strong rounded-3xl p-8 neon-glow">
+        <div className="glass-strong rounded-3xl p-6 sm:p-8 neon-glow">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-center mb-8"
+            className="text-center mb-6 sm:mb-8"
           >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 mb-4">
-              <Trophy className="w-10 h-10 text-cyan-400" />
+            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-green-500/20 border border-yellow-500/30 mb-4">
+              <Trophy className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-400" />
             </div>
-            <h1 className="text-3xl font-bold text-gradient">Polla Mundialista</h1>
-            <p className="text-muted-foreground mt-2 text-sm">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gradient">Polla Mundialista</h1>
+            <p className="text-muted-foreground mt-2 text-xs sm:text-sm">
               Registra tus pronosticos para el Mundial 2026
             </p>
           </motion.div>
@@ -223,7 +223,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 onSubmit={handleUsernameSubmit}
-                className="space-y-6"
+                className="space-y-5 sm:space-y-6"
               >
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground mb-2">
@@ -239,7 +239,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                         setError("");
                       }}
                       placeholder="Escribe tu nombre"
-                      className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                      className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/50 transition-all"
                       disabled={loading}
                       autoFocus
                     />
@@ -264,7 +264,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   disabled={loading || !nombre.trim()}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
+                  className="w-full py-3.5 bg-gradient-to-r from-yellow-500 to-green-500 hover:from-yellow-400 hover:to-green-400 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20"
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -280,19 +280,19 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 onSubmit={handlePasswordSubmit}
-                className="space-y-5"
+                className="space-y-4 sm:space-y-5"
               >
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
                     {isNewUser ? (
                       <>
                         Creando cuenta para{" "}
-                        <span className="text-cyan-400 font-medium">{nombre}</span>
+                        <span className="text-yellow-400 font-medium">{nombre}</span>
                       </>
                     ) : (
                       <>
                         Bienvenido de nuevo{" "}
-                        <span className="text-cyan-400 font-medium">{nombre}</span>
+                        <span className="text-yellow-400 font-medium">{nombre}</span>
                       </>
                     )}
                   </p>
@@ -304,7 +304,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                       setConfirmPassword("");
                       setError("");
                     }}
-                    className="text-xs text-muted-foreground hover:text-cyan-400 mt-1 transition-colors"
+                    className="text-xs text-muted-foreground hover:text-yellow-400 mt-1 transition-colors"
                   >
                     Cambiar nombre
                   </button>
@@ -318,7 +318,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                     <div className="flex items-center gap-4">
                       <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="relative w-16 h-16 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:border-cyan-500/50 transition-all overflow-hidden group"
+                        className="relative w-16 h-16 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:border-yellow-500/50 transition-all overflow-hidden group"
                       >
                         {avatarPreview ? (
                           <>
@@ -341,7 +341,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                             </button>
                           </>
                         ) : (
-                          <Upload className="w-5 h-5 text-muted-foreground group-hover:text-cyan-400 transition-colors" />
+                          <Upload className="w-5 h-5 text-muted-foreground group-hover:text-yellow-400 transition-colors" />
                         )}
                       </div>
                       <input
@@ -372,7 +372,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                         setError("");
                       }}
                       placeholder={isNewUser ? "Crea una contraseña" : "Tu contraseña"}
-                      className="w-full pl-11 pr-11 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                      className="w-full pl-11 pr-11 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/50 transition-all"
                       disabled={loading}
                       autoFocus
                     />
@@ -401,7 +401,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                           setError("");
                         }}
                         placeholder="Repite la contraseña"
-                        className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                        className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/50 transition-all"
                         disabled={loading}
                       />
                     </div>
@@ -426,7 +426,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   disabled={loading || !password}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
+                  className="w-full py-3.5 bg-gradient-to-r from-yellow-500 to-green-500 hover:from-yellow-400 hover:to-green-400 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20"
                 >
                   {loading ? (
                     <>

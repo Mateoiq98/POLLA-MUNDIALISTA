@@ -3,7 +3,16 @@
 import { useState, useEffect, useSyncExternalStore } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Trophy, Target, BarChart3, Settings, LogOut, Menu, X, Users } from "lucide-react";
+import {
+  Trophy,
+  Target,
+  BarChart3,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Users,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createBrowserClient } from "@/lib/supabase/client";
 
@@ -18,7 +27,9 @@ interface UserGroup {
   name: string;
 }
 
-const PUBLIC_NAV = [{ href: "/leaderboard", label: "Posiciones", icon: BarChart3 }];
+const PUBLIC_NAV = [
+  { href: "/leaderboard", label: "Posiciones", icon: BarChart3 },
+];
 
 const AUTHED_NAV = [
   { href: "/dashboard", label: "Pronosticos", icon: Target },
@@ -63,9 +74,17 @@ function subscribeGroupId() {
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const stored = useSyncExternalStore(subscribeUser, getUserSnapshot, getUserServerSnapshot);
+  const stored = useSyncExternalStore(
+    subscribeUser,
+    getUserSnapshot,
+    getUserServerSnapshot
+  );
   const user: UserData | null = stored ? JSON.parse(stored) : null;
-  const groupId = useSyncExternalStore(subscribeGroupId, getGroupIdSnapshot, getGroupIdServerSnapshot);
+  const groupId = useSyncExternalStore(
+    subscribeGroupId,
+    getGroupIdSnapshot,
+    getGroupIdServerSnapshot
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
   const supabase = createBrowserClient();
@@ -109,14 +128,14 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 glass-strong border-b border-white/10">
-      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 glass-strong border-b border-white/10 w-full">
+      <div className="w-full max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         <button
           onClick={() => (user ? router.push("/dashboard") : router.push("/"))}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 shrink-0"
         >
-          <Trophy className="w-6 h-6 text-cyan-400" />
-          <span className="text-lg font-bold text-gradient hidden sm:block">
+          <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
+          <span className="text-base sm:text-lg font-bold text-gradient hidden sm:block">
             Polla Mundialista
           </span>
         </button>
@@ -131,8 +150,8 @@ export default function Navbar() {
                 onClick={() => router.push(item.href)}
                 className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
                   isActive
-                    ? "text-cyan-400"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "text-yellow-400"
+                  : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -140,8 +159,12 @@ export default function Navbar() {
                 {isActive && (
                   <motion.div
                     layoutId="nav-indicator"
-                    className="absolute inset-0 bg-cyan-500/10 border border-cyan-500/20 rounded-xl"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    className="absolute inset-0 bg-yellow-500/10 border border-yellow-500/20 rounded-xl"
+                    transition={{
+                      type: "spring",
+                      bounce: 0.2,
+                      duration: 0.6,
+                    }}
                   />
                 )}
               </button>
@@ -149,22 +172,24 @@ export default function Navbar() {
           })}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {user && (
             <>
               <div className="flex items-center gap-2">
-                <Avatar className="w-8 h-8 border border-cyan-500/30">
+                <Avatar className="w-7 h-7 sm:w-8 sm:h-8 border border-yellow-500/30">
                   <AvatarImage src={user.avatar_url || undefined} />
-                  <AvatarFallback className="bg-cyan-500/20 text-cyan-400 text-xs font-bold">
+                  <AvatarFallback className="bg-yellow-500/20 text-yellow-400 text-[10px] sm:text-xs font-bold">
                     {user.nombre.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium hidden sm:block">{user.nombre}</span>
+                <span className="text-sm font-medium hidden sm:block">
+                  {user.nombre}
+                </span>
               </div>
 
               <button
                 onClick={handleLogout}
-                className="p-2 rounded-xl text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all"
+                className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all"
                 title="Cerrar sesion"
               >
                 <LogOut className="w-4 h-4" />
@@ -174,15 +199,19 @@ export default function Navbar() {
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground transition-all"
+            className="md:hidden p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-foreground transition-all"
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
 
       {user && userGroups.length > 1 && (
-        <div className="max-w-5xl mx-auto px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="w-full max-w-5xl mx-auto px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-hide">
           {userGroups.map((g) => (
             <button
               key={g.id}
@@ -196,8 +225,12 @@ export default function Navbar() {
               {g.id === groupId && (
                 <motion.div
                   layoutId="group-tab"
-                  className="absolute inset-0 bg-cyan-500/10 border border-cyan-500/20 rounded-lg"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    className="absolute inset-0 bg-yellow-500/10 border border-yellow-500/20 rounded-lg"
+                  transition={{
+                    type: "spring",
+                    bounce: 0.2,
+                    duration: 0.6,
+                  }}
                 />
               )}
               <Users className="w-3 h-3 relative z-10" />
@@ -212,7 +245,7 @@ export default function Navbar() {
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
-          className="md:hidden border-t border-white/10 bg-card/90 backdrop-blur-xl"
+          className="md:hidden border-t border-white/10 bg-card/95 backdrop-blur-xl"
         >
           <div className="p-4 space-y-2">
             {userGroups.length > 1 && (
@@ -230,7 +263,7 @@ export default function Navbar() {
                       }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
                         g.id === groupId
-                          ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+                          ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
                           : "text-muted-foreground border border-white/10 hover:text-foreground"
                       }`}
                     >
@@ -253,7 +286,7 @@ export default function Navbar() {
                   }}
                   className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${
                     isActive
-                      ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+                      ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
                       : "text-muted-foreground hover:bg-white/5"
                   }`}
                 >

@@ -141,7 +141,7 @@ export default function AdminPage() {
           className="grid grid-cols-3 gap-3 mb-8"
         >
           <div className="glass rounded-2xl p-4 text-center">
-            <Users className="w-5 h-5 text-cyan-400 mx-auto mb-2" />
+            <Users className="w-5 h-5 text-yellow-400 mx-auto mb-2" />
             <p className="text-2xl font-bold text-foreground">{stats.users}</p>
             <p className="text-xs text-muted-foreground">Jugadores</p>
           </div>
@@ -167,8 +167,8 @@ export default function AdminPage() {
             className="glass rounded-2xl p-6"
           >
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
-                <RefreshCw className="w-6 h-6 text-cyan-400" />
+              <div className="w-12 h-12 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0">
+                <RefreshCw className="w-6 h-6 text-yellow-400" />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-foreground">
@@ -183,7 +183,7 @@ export default function AdminPage() {
                   disabled={syncingFixtures}
                   whileHover={{ scale: syncingFixtures ? 1 : 1.02 }}
                   whileTap={{ scale: syncingFixtures ? 1 : 0.98 }}
-                  className="mt-4 px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm shadow-lg shadow-cyan-500/20"
+                  className="mt-4 px-6 py-2.5 bg-gradient-to-r from-yellow-500 to-green-500 hover:from-yellow-400 hover:to-green-400 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm shadow-lg shadow-yellow-500/20"
                 >
                   {syncingFixtures ? (
                     <>
